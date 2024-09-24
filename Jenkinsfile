@@ -51,8 +51,6 @@ pipeline{
                 ls -la
                 '''
         }*/
-    }
-
         /*stage('tests'){
             parallel{
                 stage('unit test'){
@@ -146,6 +144,9 @@ pipeline{
                     environment{
                         CI_ENVIRONMENT_URL = 'https://steady-croissant-00dd27.netlify.app'
     }
+    }
+
+        
 
                     steps{
                         sh '''
