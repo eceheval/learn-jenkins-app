@@ -115,30 +115,43 @@ pipeline {
             }
         }
 
-        stage('Deploy to Docker') {
+                stage('Deploy to Docker') {
+                    steps {
+                        script {
+                            def imageName = "${DOCKER_IMAGE}:${env.BUILD_NUMBER}"
+                            sh '''
+                            docker run -d -p 3000:3000 ''' + imageName + '''
+                            '''
+                            echo "Application successfully deployed."
+                        }
+                    }
+                }
+
+                stage('Run Docker Container Locally') {
             steps {
                 script {
-                    def imageName = "${DOCKER_IMAGE}:${env.BUILD_NUMBER}"
-                    sh '''
-                    docker run -d -p 3000:3000 ''' + imageName + '''
-                    '''
-                    echo "Application successfully deployed."
+                    // Portun kullanımda olup olmadığını kontrol et
+                    def isPortInUse = sh(script: 'lsof -i :3000', returnStatus: true) == 0
+                    
+                    if (isPortInUse) {
+                        echo "3000 portu zaten kullanımda. Farklı bir port kullanılacak."
+                        // Farklı bir port numarası belirle
+                        def newPort = 3001
+                        // Docker container'ı yeni port ile çalıştır
+                        sh '''
+                        docker run -d -p ${newPort}:3000 ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
+                        '''
+                        echo "Yerel Docker container ${newPort} portu ile başarıyla çalıştırıldı."
+                    } else {
+                        // Port kullanılmıyorsa, 3000 portu ile çalıştır
+                        sh '''
+                        docker run -d -p 3000:3000 ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
+                        '''
+                        echo "Yerel Docker container başarıyla 3000 portu ile çalıştırıldı."
+                    }
                 }
             }
         }
-
-        stage('Run Docker Container Locally') {
-           steps {
-              script {
-                sh '''
-                #!/bin/bash
-                # Docker container'ı yerel olarak çalıştırıyoruz
-                docker run -d -p 3000:3000 ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                '''
-                echo "Yerel Docker container başarıyla çalıştırıldı."
-        }
-    }
-}
 
 
         stage('Check Application') {
