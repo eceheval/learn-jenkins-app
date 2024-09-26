@@ -157,13 +157,15 @@ pipeline {
             }
             
             // Docker container'ı kullanılabilir port ile çalıştır
-            sh '''
+            sh """
+            #!/bin/bash
             docker run -d -p ${portToUse}:3000 ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
-            '''
+            """
             echo "Yerel Docker container başarıyla ${portToUse} portu ile çalıştırıldı."
         }
     }
 }
+
 
 
 
