@@ -128,30 +128,43 @@ pipeline {
                 }
 
                 stage('Run Docker Container Locally') {
-            steps {
-                script {
-                    // Portun kullanımda olup olmadığını kontrol et
-                    def isPortInUse = sh(script: 'lsof -i :3000', returnStatus: true) == 0
-                    
-                    if (isPortInUse) {
-                        echo "3000 portu zaten kullanımda. Farklı bir port kullanılacak."
-                        // Farklı bir port numarası belirle
-                        def newPort = 3001
-                        // Docker container'ı yeni port ile çalıştır
-                        sh '''
-                        docker run -d -p ${newPort}:3000 ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
-                        '''
-                        echo "Yerel Docker container ${newPort} portu ile başarıyla çalıştırıldı."
-                    } else {
-                        // Port kullanılmıyorsa, 3000 portu ile çalıştır
-                        sh '''
-                        docker run -d -p 3000:3000 ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
-                        '''
-                        echo "Yerel Docker container başarıyla 3000 portu ile çalıştırıldı."
-                    }
+    steps {
+        script {
+            // Kullanılabilir bir port bulmak için döngü
+            def usedPorts = []
+            def basePort = 3000
+            def maxRetries = 10
+            
+            // İlk portu dene
+            def portToUse = basePort
+            
+            for (int i = 0; i < maxRetries; i++) {
+                // Portun kullanımda olup olmadığını kontrol et
+                def isPortInUse = sh(script: "lsof -i :${portToUse}", returnStatus: true) == 0
+                
+                if (!isPortInUse) {
+                    echo "Kullanılabilir port bulundu: ${portToUse}"
+                    break // Kullanılabilir bir port bulunduğunda döngüden çık
+                } else {
+                    usedPorts.add(portToUse)
+                    portToUse++ // Bir sonraki portu dene
                 }
             }
+            
+            // Eğer kullanılabilir bir port bulunamadıysa hata ver
+            if (usedPorts.size() == maxRetries) {
+                error "Tüm denenen portlar kullanımda. Lütfen portları kontrol edin."
+            }
+            
+            // Docker container'ı kullanılabilir port ile çalıştır
+            sh '''
+            docker run -d -p ${portToUse}:3000 ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
+            '''
+            echo "Yerel Docker container başarıyla ${portToUse} portu ile çalıştırıldı."
         }
+    }
+}
+
 
 
         stage('Check Application') {
