@@ -4,7 +4,7 @@ pipeline {
     environment {
         NETLIFY_SITE_ID = '22cc4b5c-6923-49b2-87fc-e8c9a5f922d9'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token')
-        DOCKER_IMAGE = 'eceunal7/deneme'
+        DOCKER_IMAGE = 'eceunal7/eceunal7deneme'
         DOCKER_REGISTRY = 'docker.io'
         DOCKER_CREDENTIALS_ID = 'dockerhub_credentials'  
     }
@@ -128,16 +128,18 @@ pipeline {
         }
 
         stage('Run Docker Container Locally') {
-            steps {
-                script {
-                    sh '''
-                    # Docker container'ı yerel olarak çalıştırıyoruz
-                    docker run -d -p 3000:3000 ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
-                    '''
-                    echo "Yerel Docker container başarıyla çalıştırıldı."
-                }
-            }
+           steps {
+              script {
+                sh '''
+                #!/bin/bash
+                # Docker container'ı yerel olarak çalıştırıyoruz
+                docker run -d -p 3000:3000 ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                '''
+                echo "Yerel Docker container başarıyla çalıştırıldı."
         }
+    }
+}
+
 
         stage('Check Application') {
             steps {
